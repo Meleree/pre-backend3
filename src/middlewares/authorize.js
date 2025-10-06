@@ -1,22 +1,29 @@
-// Middleware de autorización basado en roles
+// src/middlewares/authorize.js
+
+/**
+ * authorize(roles)
+ * roles: string | array
+ * Ejemplo:
+ *   authorize('admin')           -> solo admin
+ *   authorize(['admin','user'])  -> admin o user
+ */
 export const authorize = (roles = []) => {
-    // roles puede ser un string o un array
-    if (typeof roles === 'string') {
-      roles = [roles];
-    }
-  
-    return (req, res, next) => {
-      const user = req.user; // req.user debe venir de passport "jwt" o de verifyToken
-  
+  if (typeof roles === 'string') roles = [roles];
+
+  return (req, res, next) => {
+    try {
+      const user = req.user; 
       if (!user) {
         return res.status(401).json({ message: 'No autenticado' });
       }
-  
+
       if (roles.length && !roles.includes(user.role)) {
         return res.status(403).json({ message: 'No autorizado' });
       }
-  
+
       next();
-    };
+    } catch (err) {
+      next(err);
+    }
   };
-  
+};

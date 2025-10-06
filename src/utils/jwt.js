@@ -2,16 +2,24 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const verifyToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET);
-};
+const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 
-// Nueva función que necesitas
 export const signToken = (user) => {
   const payload = {
-    id: user._id,
-    email: user.email,
-    role: user.role
+    user: {
+      id: user._id || user.id,
+      email: user.email,
+      role: user.role || 'user'
+    }
   };
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+};
+
+export const verifyToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
+  } catch (err) {
+    throw err;
+  }
 };

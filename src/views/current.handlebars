@@ -1,6 +1,6 @@
-{{#if welcomeMessage}}
-  <div class="welcome-message" style="background-color: #27ae60; color: white; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
-    {{welcomeMessage}}
+{{#if user}}
+  <div class="welcome-message">
+    👋 ¡Bienvenida, <strong>{{user.first_name}}</strong>!
   </div>
 {{/if}}
 

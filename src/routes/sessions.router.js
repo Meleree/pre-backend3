@@ -1,4 +1,3 @@
-// src/routes/sessions.router.js
 import { Router } from 'express';
 import passport from 'passport';
 import { verifyToken, signToken } from '../utils/jwt.js';
@@ -15,10 +14,26 @@ const router = Router();
 const ticketService = new TicketService();
 
 // ====================== HELPERS ======================
-const getUserFromCookie = (req) => {
+const getUserFromCookie = async (req) => {
   try {
-    if (req.signedCookies.currentUser) return verifyToken(req.signedCookies.currentUser);
-  } catch {}
+    if (req.signedCookies.currentUser) {
+      const decoded = verifyToken(req.signedCookies.currentUser);
+      if (decoded && decoded._id) {
+        const dbUser = await User.findById(decoded._id).lean();
+        if (dbUser) {
+          return {
+            _id: dbUser._id,
+            first_name: dbUser.first_name,
+            last_name: dbUser.last_name,
+            email: dbUser.email,
+            role: dbUser.role,
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error al obtener usuario desde cookie:", err);
+  }
   return null;
 };
 
@@ -27,13 +42,7 @@ const getUserFromCookie = (req) => {
 // Vista login
 router.get('/login', (req, res) => {
   const error = req.query.error || null;
-  let welcomeMessage = null;
-
-  if (req.query.welcome && req.query.name) {
-    // Usamos el nombre que llega en query.name
-    welcomeMessage = `¡Bienvenido/a, ${req.query.name}!`;
-  }
-
+  const welcomeMessage = req.query.welcomeMessage || null;
   res.render('login', { error, title: 'Login', welcomeMessage });
 });
 
@@ -64,8 +73,14 @@ router.post('/register', async (req, res) => {
     const token = signToken({ _id: newUser._id, email: newUser.email, role: newUser.role });
     res.cookie('currentUser', token, { signed: true, httpOnly: true });
 
-    // Redirigir a login con mensaje de bienvenida
-    res.redirect('/users/login?welcome=true&name=' + encodeURIComponent(`${newUser.first_name} ${newUser.last_name}`));
+    const products = await Product.find().lean();
+    res.render('home', { 
+      title: 'Inicio', 
+      user: { _id: newUser._id, first_name: newUser.first_name, last_name: newUser.last_name, role: newUser.role }, 
+      products, 
+      welcomeMessage: `👋 ¡Bienvenida, ${newUser.first_name}!`
+    });
+
   } catch (err) {
     console.error('Error en /register:', err);
     res.render('register', { error: true });
@@ -86,8 +101,14 @@ router.post('/login', async (req, res) => {
     const token = signToken({ _id: user._id, email: user.email, role: user.role });
     res.cookie('currentUser', token, { signed: true, httpOnly: true });
 
-    // Redirigir a home con mensaje de bienvenida
-    res.redirect('/?welcome=true&name=' + encodeURIComponent(`${user.first_name} ${user.last_name}`));
+    const products = await Product.find().lean();
+    res.render('home', { 
+      title: 'Inicio', 
+      user: { _id: user._id, first_name: user.first_name, last_name: user.last_name, role: user.role }, 
+      products, 
+      welcomeMessage: `👋 ¡Bienvenida, ${user.first_name}!`
+    });
+
   } catch (err) {
     console.error('Error en /login:', err);
     res.render('login', { error: true });
@@ -114,19 +135,15 @@ router.get(
 // ====================== HOME / DASHBOARD ======================
 
 router.get('/', async (req, res) => {
-  const user = getUserFromCookie(req);
+  const user = await getUserFromCookie(req);
   const products = await Product.find().lean();
-  let welcomeMessage = null;
-
-  if (req.query.welcome && req.query.name) {
-    welcomeMessage = `¡Bienvenido/a, ${req.query.name}!`;
-  }
+  const welcomeMessage = req.query.welcome && user ? `👋 ¡Bienvenida, ${user.first_name}!` : null;
 
   res.render('home', { title: 'Inicio', user, products, welcomeMessage });
 });
 
 router.get('/dashboard', async (req, res) => {
-  const user = getUserFromCookie(req);
+  const user = await getUserFromCookie(req);
   const products = await Product.find().lean();
   res.render('dashboard', { title: 'Dashboard', user, products });
 });
@@ -134,40 +151,57 @@ router.get('/dashboard', async (req, res) => {
 // ====================== CARRITOS ======================
 
 router.get('/carts', async (req, res) => {
-  const user = getUserFromCookie(req);
+  const user = await getUserFromCookie(req);
   const carts = await Cart.find().populate('products.product').lean();
   res.render('carts', { title: 'Lista de Carritos', user, carts });
 });
 
 router.get('/carts/:cid', async (req, res) => {
-  const user = getUserFromCookie(req);
+  const user = await getUserFromCookie(req);
   const cart = await Cart.findById(req.params.cid).populate('products.product').lean();
-
-  if (!cart) {
-    return res.status(404).render('error', {
-      message: 'Carrito no encontrado',
-      title: 'Error',
-      user,
-    });
-  }
-
+  if (!cart) return res.status(404).render('error', { message: 'Carrito no encontrado', title: 'Error', user });
   res.render('cart', { cart, title: `Carrito ${cart._id}`, user });
+});
+
+// ====================== AGREGAR PRODUCTOS AL CARRITO ======================
+
+router.post('/api/carts/:cid/product/:pid', async (req, res) => {
+  try {
+    const user = await getUserFromCookie(req);
+    if (!user) return res.status(401).json({ message: 'Usuario no autenticado' });
+
+    const { cid, pid } = req.params;
+    const { quantity } = req.body;
+
+    let cart = await Cart.findById(cid);
+    if (!cart) {
+      cart = await Cart.create({ _id: cid, products: [] });
+    }
+
+    const existingProduct = cart.products.find(p => p.product.toString() === pid);
+    if (existingProduct) {
+      existingProduct.quantity += quantity || 1;
+    } else {
+      cart.products.push({ product: pid, quantity: quantity || 1 });
+    }
+
+    await cart.save();
+    res.json({ message: 'Producto agregado al carrito con éxito', cart });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error al agregar producto al carrito', error: err.message });
+  }
 });
 
 // ====================== PRODUCTOS ======================
 
 router.get('/products/:pid', async (req, res) => {
-  const user = getUserFromCookie(req);
-
+  const user = await getUserFromCookie(req);
   try {
     const product = await Product.findById(req.params.pid).lean();
-
-    if (!product) {
-      return res.status(404).render('error', { message: 'Producto no encontrado', title: 'Error', user });
-    }
+    if (!product) return res.status(404).render('error', { message: 'Producto no encontrado', title: 'Error', user });
 
     product.thumbnail = product.thumbnail || (product.thumbnails && product.thumbnails[0]) || '/img/default-placeholder.png';
-
     res.render('productDetail', { product, title: product.title, user });
   } catch (err) {
     console.error(err);
@@ -176,7 +210,7 @@ router.get('/products/:pid', async (req, res) => {
 });
 
 router.get('/realtimeproducts', async (req, res) => {
-  const user = getUserFromCookie(req);
+  const user = await getUserFromCookie(req);
   const products = await Product.find().lean();
   res.render('realTimeProducts', { title: 'Productos en tiempo real', user, products });
 });
@@ -201,7 +235,7 @@ router.delete('/products/:pid', authorize(['admin']), async (req, res) => {
 // ====================== COMPRA / TICKET ======================
 
 router.post('/carts/:cid/purchase', authorize(['user']), async (req, res) => {
-  const user = getUserFromCookie(req);
+  const user = await getUserFromCookie(req);
   if (!user) return res.status(401).json({ message: 'Usuario no autenticado' });
 
   try {
@@ -209,20 +243,6 @@ router.post('/carts/:cid/purchase', authorize(['user']), async (req, res) => {
     res.json({ message: 'Compra realizada con éxito', ticket });
   } catch (err) {
     console.error('💥 Error al realizar la compra:', err);
-    res.status(400).json({ message: 'Hubo un problema al realizar la compra.', error: err.message });
-  }
-});
-
-// Ruta alternativa para compatibilidad con frontend
-router.post('/api/carts/:cid/checkout', authorize(['user']), async (req, res) => {
-  const user = getUserFromCookie(req);
-  if (!user) return res.status(401).json({ message: 'Usuario no autenticado' });
-
-  try {
-    const ticket = await ticketService.checkoutCart(req.params.cid, user.email);
-    res.json({ message: 'Compra realizada con éxito', ticket });
-  } catch (err) {
-    console.error('💥 Error al realizar el checkout:', err);
     res.status(400).json({ message: 'Hubo un problema al realizar la compra.', error: err.message });
   }
 });

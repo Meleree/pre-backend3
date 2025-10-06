@@ -1,13 +1,13 @@
-// src/routes/carts.router.js
 import { Router } from "express";
 import cartService from "../services/cart.service.js";
 import TicketService from "../services/ticket.service.js";
-import { verifyToken } from "../utils/jwt.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { authorize } from "../middlewares/authorize.js";
 
 const router = Router();
 const ticketService = new TicketService();
 
-// 🛒 Crear carrito
+// ====================== CREAR CARRITO ======================
 router.post("/", async (req, res) => {
   try {
     const cart = await cartService.createCart();
@@ -18,7 +18,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 🛒 Obtener carrito por ID
+// ====================== OBTENER CARRITO POR ID ======================
 router.get("/:cid", async (req, res) => {
   try {
     const cart = await cartService.getCartById(req.params.cid);
@@ -29,85 +29,111 @@ router.get("/:cid", async (req, res) => {
   }
 });
 
-// ➕ Agregar producto al carrito
-router.post("/:cid/product/:pid", async (req, res) => {
+// ====================== AGREGAR PRODUCTO AL CARRITO ======================
+// Solo usuarios autenticados con rol 'user' pueden agregar productos
+router.post("/:cid/product/:pid", authMiddleware, authorize("user"), async (req, res) => {
   try {
     const quantity = parseInt(req.body.quantity) || 1;
     const cart = await cartService.addProduct(req.params.cid, req.params.pid, quantity);
-    res.json(cart);
+    res.json({ status: "success", payload: cart });
   } catch (err) {
     console.error("❌ Error al agregar producto al carrito:", err);
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ status: "error", message: err.message });
   }
 });
 
-// 🔁 Actualizar cantidad (+/-)
+// ====================== ACTUALIZAR CANTIDAD DE PRODUCTO ======================
 router.put("/:cid/products/:pid", async (req, res) => {
   try {
     const quantityChange = parseInt(req.body.quantity);
     if (isNaN(quantityChange)) throw new Error("Cantidad inválida");
 
     const cart = await cartService.updateProductQuantity(req.params.cid, req.params.pid, quantityChange);
-    res.json(cart);
+    res.json({ status: "success", payload: cart });
   } catch (err) {
     console.error("❌ Error al actualizar cantidad:", err);
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ status: "error", message: err.message });
   }
 });
 
-// ❌ Eliminar producto del carrito
+// ====================== ELIMINAR PRODUCTO DEL CARRITO ======================
 router.delete("/:cid/products/:pid", async (req, res) => {
   try {
     const cart = await cartService.removeProduct(req.params.cid, req.params.pid);
-    res.json(cart);
+    res.json({ status: "success", payload: cart });
   } catch (err) {
     console.error("❌ Error al eliminar producto:", err);
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ status: "error", message: err.message });
   }
 });
 
-// 🧹 Vaciar carrito
+// ====================== VACIAR CARRITO ======================
 router.delete("/:cid", async (req, res) => {
   try {
     const cart = await cartService.clearCart(req.params.cid);
-    res.json(cart);
+    res.json({ status: "success", payload: cart });
   } catch (err) {
     console.error("❌ Error al vaciar carrito:", err);
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ status: "error", message: err.message });
   }
 });
 
-// 💳 CHECKOUT (Finalizar compra)
-router.post("/:cid/checkout", async (req, res) => {
+// ====================== REALIZAR COMPRA ======================
+// Requiere autenticación y rol 'user'
+router.post("/:cid/purchase", authMiddleware, authorize("user"), async (req, res) => {
   try {
-    // Leer usuario desde cookie JWT
-    const token = req.signedCookies?.currentUser;
-    if (!token) {
-      console.warn("⚠️ Intento de checkout sin token");
-      return res.status(401).json({ message: "Debes iniciar sesión para finalizar la compra." });
+    const { cid } = req.params;
+    const user = req.user; // viene desde authMiddleware
+    if (!user || !user.email) {
+      return res.status(401).json({ message: "Usuario no autenticado o token inválido." });
     }
 
-    const user = verifyToken(token);
-    if (!user?.email) {
-      console.warn("⚠️ Token inválido o sin email");
-      return res.status(401).json({ message: "Token inválido o usuario no autorizado." });
+    const result = await ticketService.checkoutCart(cid, user.email);
+
+    if (!result.ticket) {
+      return res.status(400).json({
+        status: "error",
+        message: "No se pudo procesar la compra: no hay productos disponibles.",
+        notProcessed: result.notProcessed
+      });
     }
 
-    console.log(`🧾 Iniciando checkout para el usuario: ${user.email}`);
-
-    // Generar ticket
-    const ticket = await ticketService.checkoutCart(req.params.cid, user.email);
-
-    console.log(`✅ Compra realizada correctamente. Ticket: ${ticket.code}`);
-
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "Compra realizada con éxito",
-      payload: ticket,
+      ticket: result.ticket,
+      notProcessed: result.notProcessed
     });
   } catch (err) {
-    console.error("💥 Error al realizar el checkout:", err);
-    res.status(400).json({ message: err.message || "Hubo un problema al realizar la compra" });
+    console.error("💥 Error al realizar el purchase:", err);
+    res.status(500).json({ message: err.message || "Hubo un problema al realizar la compra" });
+  }
+});
+
+// ====================== COMPATIBILIDAD /checkout ======================
+router.post("/:cid/checkout", authMiddleware, authorize("user"), async (req, res) => {
+  try {
+    const { cid } = req.params;
+    const user = req.user;
+    const result = await ticketService.checkoutCart(cid, user.email);
+
+    if (!result.ticket) {
+      return res.status(400).json({
+        status: "error",
+        message: "No se pudo procesar la compra: no hay productos disponibles.",
+        notProcessed: result.notProcessed
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Checkout realizado con éxito",
+      ticket: result.ticket,
+      notProcessed: result.notProcessed
+    });
+  } catch (err) {
+    console.error("💥 Error en /checkout:", err);
+    res.status(500).json({ message: err.message || "Hubo un problema al realizar el checkout" });
   }
 });
 

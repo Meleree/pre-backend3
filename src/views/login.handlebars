@@ -1,23 +1,31 @@
-<div class="container">
-  <h2>Iniciar sesión</h2>
+<h1>{{title}}</h1>
 
-  {{#if welcomeMessage}}
-    <div class="alert alert-success" style="background-color:#27ae60; color:white; padding:10px; border-radius:8px; text-align:center; margin-bottom:15px;">
-      {{welcomeMessage}}
-    </div>
-  {{/if}}
+{{!-- Mensaje de bienvenida --}}
+{{#if welcomeMessage}}
+  <div class="alert alert-success text-center" role="alert">
+    {{welcomeMessage}}
+  </div>
+{{/if}}
 
-  {{#if error}}
-    <div class="alert alert-error" style="background-color:#e74c3c; color:white; padding:10px; border-radius:8px; margin-bottom:15px;">
-      {{error}}
-    </div>
-  {{/if}}
+{{!-- Mensaje de error --}}
+{{#if error}}
+  <div class="alert alert-danger text-center" role="alert">
+    Credenciales inválidas. Por favor, intentá de nuevo.
+  </div>
+{{/if}}
 
-  <form method="POST" action="/users/login">
-    <input type="email" name="email" placeholder="Email" required>
-    <input type="password" name="password" placeholder="Contraseña" required>
-    <button type="submit" class="btn">Ingresar</button>
-  </form>
+<form action="/users/login" method="POST" class="login-form">
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" name="email" required />
+  </div>
 
-  <p>¿No tenés cuenta? <a href="/users/register">Registrarse</a></p>
-</div>
+  <div>
+    <label for="password">Contraseña:</label>
+    <input type="password" name="password" required />
+  </div>
+
+  <button type="submit" class="btn btn-primary">Ingresar</button>
+</form>
+
+<p>¿No tenés cuenta? <a href="/users/register">Registrate acá</a></p>

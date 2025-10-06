@@ -190,3 +190,18 @@ h1 {
     display: inline-block;
     margin-left: 10px;
 }
+.welcome-message {
+    text-align: center;
+    margin: 20px auto;
+    font-size: 1.2em;
+  }
+  
+  .welcome-message.success {
+    background-color: #e6ffe6;
+    color: #2e7d32;
+    border: 1px solid #81c784;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 500px;
+  }
+  

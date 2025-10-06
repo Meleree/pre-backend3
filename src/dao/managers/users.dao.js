@@ -1,5 +1,4 @@
-// src/dao/managers/users.dao.js
-import User from '../models/user.model.js'; // <-- cambio aquí
+import User from '../models/user.model.js';
 
 export default class UsersDAO {
   async getAll() {
@@ -8,6 +7,11 @@ export default class UsersDAO {
 
   async getById(id) {
     return await User.findById(id).lean();
+  }
+
+  // Nuevo método requerido por repositorios / servicios
+  async getByEmail(email) {
+    return await User.findOne({ email }).lean();
   }
 
   async create(userData) {
