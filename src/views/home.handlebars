@@ -56,9 +56,10 @@
               const response = await fetch("/api/carts", { 
                 method: "POST", 
                 headers: { "Content-Type": "application/json" }, 
+                credentials: "include"  // <-- AGREGADO para sesión
               });
               const data = await response.json();
-              cartId = data._id;
+              cartId = data._id || (data.payload && data.payload._id);
               localStorage.setItem("cartId", cartId);
             }
 
@@ -66,6 +67,7 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ quantity: 1 }),
+              credentials: "include"  // <-- AGREGADO para sesión
             });
 
             if (addResponse.ok) {

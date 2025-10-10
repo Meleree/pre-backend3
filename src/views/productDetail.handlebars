@@ -47,10 +47,13 @@
           let cartId = localStorage.getItem("cartId");
 
           if (!cartId) {
-            const response = await fetch("/api/carts", { method: "POST" });
+            const response = await fetch("/api/carts", { 
+              method: "POST", 
+              credentials: "include"
+            });
             const data = await response.json();
-            if (!response.ok || !data.payload?._id) throw new Error("No se pudo crear el carrito.");
-            cartId = data.payload._id;
+            cartId = data.payload?._id || data._id;
+            if (!cartId) throw new Error("No se pudo crear el carrito.");
             localStorage.setItem("cartId", cartId);
           }
 
@@ -58,12 +61,21 @@
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ quantity: 1 }),
+            credentials: "include"
           });
 
-          if (addResponse.ok) {
+          // Siempre parsea el JSON de respuesta
+          let result;
+          try {
+            result = await addResponse.json();
+          } catch { result = {}; }
+
+          if (addResponse.status === 401 || (result && result.message && result.message.toLowerCase().includes("iniciar sesión"))) {
+            alert("Tenés que iniciar sesión para agregar productos al carrito.");
+          } else if (addResponse.ok) {
             alert("✅ Producto agregado al carrito con éxito.");
           } else {
-            throw new Error("No se pudo agregar el producto.");
+            alert(result.message || "No se pudo agregar el producto.");
           }
         } catch (err) {
           console.error(err);

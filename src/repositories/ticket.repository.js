@@ -1,16 +1,19 @@
-import Ticket from '../dao/models/ticket.model.js'; // ✅ default import
+import { ticketsDAO } from '../dao/index.js'; // Importa correctamente el DAO
 
 export default class TicketRepository {
+  constructor() {
+    this.dao = ticketsDAO;
+  }
+
   async create(ticketData) {
-    const ticket = new Ticket(ticketData);
-    return ticket.save();
+    return await this.dao.create(ticketData);
   }
 
   async getAll() {
-    return Ticket.find().populate('purchaser').lean();
+    return await this.dao.getAll();
   }
 
   async getById(id) {
-    return Ticket.findById(id).populate('purchaser').lean();
+    return await this.dao.getById(id);
   }
 }

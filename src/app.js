@@ -6,28 +6,43 @@ import http from 'http';
 import { Server as SocketServer } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import passport from 'passport';
+import cors from "cors";
 import './config/passport.js';
 import passwordRouter from './routes/password.router.js';
 
 import sessionsRouter from './routes/sessions.router.js';
-import usersViewsRouter from './routes/views.router.js';
+import usersViewsRouter from './routes/views.router.js'; 
 import cartsRouter from './routes/carts.router.js';
 import productsRouter from './routes/products.router.js';
 import connectDB from './config/db.js';
 
 dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const SESSION_SECRET = process.env.SESSION_SECRET; 
+
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middlewares
+// --- CONFIGURACIÓN DE CORS ---
+app.use(cors({
+  origin: "http://localhost:3000", // Cambia si tu frontend está en otro dominio/puerto
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser(process.env.JWT_SECRET));
-app.use(express.static(path.resolve(__dirname, '../public'))); // sirve CSS, JS, img
 
-// Handlebars
+app.use(cookieParser(SESSION_SECRET));
+app.use(passport.initialize()); 
+
+const publicPath = path.resolve(__dirname, '../public');
+app.use(express.static(publicPath)); 
+console.log(`✅ Archivos estáticos servidos desde: ${publicPath}`);
+
 app.engine(
   'handlebars',
   handlebars.engine({
@@ -39,14 +54,13 @@ app.engine(
 app.set('view engine', 'handlebars');
 app.set('views', path.resolve(__dirname, 'views'));
 
-// Routers
-app.use('/users', sessionsRouter);
+app.use('/api/auth', sessionsRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/carts', cartsRouter);
-app.use('/', usersViewsRouter);
-app.use('/password', passwordRouter);
 
-// HTTP + Socket.io
+app.use('/password', passwordRouter);
+app.use('/', usersViewsRouter);
+
 const server = http.createServer(app);
 const io = new SocketServer(server);
 
@@ -57,7 +71,6 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log('Cliente desconectado:', socket.id));
 });
 
-// Conectar MongoDB y levantar server
 const PORT = process.env.PORT || 8080;
 connectDB().then(() => {
   server.listen(PORT, () =>
