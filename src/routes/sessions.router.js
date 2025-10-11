@@ -18,8 +18,11 @@ const productService = ProductService;
 router.post('/register', async (req, res) => {
     try {
         const { first_name, last_name, email, password, age } = req.body;
+        if (!first_name || !last_name || !email || !password) {
+            return res.status(400).json({ success: false, message: "Todos los campos obligatorios." });
+        }
         const newUser = await AuthService.registerUser({ first_name, last_name, email, password, age });
-        const token = signToken(newUser); 
+        const token = signToken(newUser);
 
         res.cookie('currentUser', token, { 
             signed: true, 
@@ -47,7 +50,13 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: "Email y contraseña requeridos." });
+        }
         const user = await AuthService.loginUser({ email, password });
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Credenciales inválidas." });
+        }
         const token = signToken(user);
 
         res.cookie('currentUser', token, { 
@@ -73,9 +82,14 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// ====================== LOGOUT ======================
+router.post('/logout', (req, res) => {
+    res.clearCookie('currentUser');
+    res.json({ success: true, message: "Sesión cerrada correctamente" });
+});
+
 // ====================== API PERFIL / CURRENT ======================
 
-// GET /api/auth/current 
 router.get(
     '/current',
     passport.authenticate('jwt', { session: false }),
@@ -138,7 +152,6 @@ router.delete('/products/:pid', authorize(['admin']), async (req, res) => {
         res.status(404).json({ message: err.message });
     }
 });
-
 
 // ====================== API RESET PASSWORD ======================
 
