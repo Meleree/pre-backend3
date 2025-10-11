@@ -43,41 +43,80 @@
   </div>
 
   <script>
+    // Protección global para evitar doble notificación de sesión
+    if (!window.__SESSION_ALERT_SHOWN__) window.__SESSION_ALERT_SHOWN__ = false;
+
     document.addEventListener("DOMContentLoaded", () => {
+      // Limpia handlers anteriores para evitar duplicados
+      document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
+        // Elimina todos los listeners previos
+        const clone = btn.cloneNode(true);
+        btn.parentNode.replaceChild(clone, btn);
+      });
+
       const addToCartButtons = document.querySelectorAll(".add-to-cart-btn");
 
       addToCartButtons.forEach(btn => {
         btn.addEventListener("click", async () => {
-          const productId = btn.dataset.id;
-          try {
-            let cartId = localStorage.getItem("cartId");
+          if (window.__SESSION_ALERT_SHOWN__) return;
 
+          const productId = btn.dataset.id;
+          let cartId = localStorage.getItem("cartId");
+          let showedAuthError = false;
+
+          try {
+            // Si no hay cartId, intento crearlo
             if (!cartId) {
               const response = await fetch("/api/carts", { 
                 method: "POST", 
                 headers: { "Content-Type": "application/json" }, 
-                credentials: "include"  // <-- AGREGADO para sesión
+                credentials: "include"
               });
-              const data = await response.json();
+              let data = {};
+              try { data = await response.json(); } catch {}
+              if (response.status === 401 || (data.message && data.message.toLowerCase().includes("iniciar sesión"))) {
+                if (!window.__SESSION_ALERT_SHOWN__) {
+                  window.__SESSION_ALERT_SHOWN__ = true;
+                  alert("Tenés que iniciar sesión para agregar productos al carrito.");
+                }
+                showedAuthError = true;
+                return; // Detiene el flujo, NUNCA hace el segundo fetch
+              }
               cartId = data._id || (data.payload && data.payload._id);
+              if (!cartId) {
+                alert(data.message || "No se pudo crear el carrito.");
+                return; // Detiene el flujo, NUNCA hace el segundo fetch
+              }
               localStorage.setItem("cartId", cartId);
             }
 
+            // Si por algún motivo cartId sigue no definido, no sigas
+            if (!cartId) return;
+
+            // Segundo fetch: agregar producto
             const addResponse = await fetch(`/api/carts/${cartId}/product/${productId}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ quantity: 1 }),
-              credentials: "include"  // <-- AGREGADO para sesión
+              credentials: "include"
             });
+            let result = {};
+            try { result = await addResponse.json(); } catch {}
 
-            if (addResponse.ok) {
+            if (
+              addResponse.status === 401 ||
+              (result.message && result.message.toLowerCase().includes("iniciar sesión"))
+            ) {
+              localStorage.removeItem("cartId");
+              if (!showedAuthError && !window.__SESSION_ALERT_SHOWN__) {
+                window.__SESSION_ALERT_SHOWN__ = true;
+                alert("Tenés que iniciar sesión para agregar productos al carrito.");
+              }
+            } else if (addResponse.ok) {
               alert("✅ Producto agregado al carrito con éxito.");
             } else {
-              const errData = await addResponse.json();
-              console.error("Error en la respuesta del servidor:", errData);
-              throw new Error(errData.message || "Error al agregar producto");
+              alert(result.message || "No se pudo agregar el producto.");
             }
-
           } catch (err) {
             console.error(err);
             alert("Hubo un problema al agregar el producto al carrito.");
