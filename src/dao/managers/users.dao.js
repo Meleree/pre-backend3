@@ -9,7 +9,6 @@ export default class UsersDAO {
     return await User.findById(id).lean();
   }
 
-  // Nuevo método requerido por repositorios / servicios
   async getByEmail(email) {
     return await User.findOne({ email }).lean();
   }

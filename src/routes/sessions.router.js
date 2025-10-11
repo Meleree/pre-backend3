@@ -15,28 +15,23 @@ const productService = ProductService;
 
 // ====================== LOGIN / REGISTER (Lógica de API/Auth) ======================
 
-// POST /api/auth/register (Registro de usuario)
 router.post('/register', async (req, res) => {
     try {
         const { first_name, last_name, email, password, age } = req.body;
         const newUser = await AuthService.registerUser({ first_name, last_name, email, password, age });
         const token = signToken(newUser); 
 
-        // Setea siempre la cookie
         res.cookie('currentUser', token, { 
             signed: true, 
             httpOnly: true, 
             path: '/', 
-            sameSite: "lax" // o "none" si usas https/front-back separados
-            // secure: false, // solo true en producción https
+            sameSite: "lax" 
         });
 
-        // Si pide JSON, responde JSON
         if (req.headers.accept && req.headers.accept.includes('application/json')) {
             return res.status(201).json({ success: true, user: new UserDTO(newUser), token });
         }
 
-        // Si es formulario clásico, redirige
         res.redirect('/?welcome=true');
 
     } catch (err) {
@@ -49,28 +44,23 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// POST /api/auth/login (Inicio de sesión)
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await AuthService.loginUser({ email, password });
         const token = signToken(user);
 
-        // Setea siempre la cookie antes de responder
         res.cookie('currentUser', token, { 
             signed: true, 
             httpOnly: true, 
             path: '/', 
-            sameSite: "lax" // o "none" si usas https/front-back separados
-            // secure: false, // solo true en producción https
+            sameSite: "lax" 
         });
 
-        // Si pide JSON, responde JSON (fetch o AJAX)
         if (req.headers.accept && req.headers.accept.includes('application/json')) {
             return res.status(200).json({ success: true, user: new UserDTO(user), token });
         }
 
-        // Si es formulario clásico, redirige
         res.redirect('/?welcome=true');
 
     } catch (err) {
@@ -85,7 +75,7 @@ router.post('/login', async (req, res) => {
 
 // ====================== API PERFIL / CURRENT ======================
 
-// GET /api/auth/current (Devuelve JSON del usuario logueado via JWT)
+// GET /api/auth/current 
 router.get(
     '/current',
     passport.authenticate('jwt', { session: false }),
@@ -97,7 +87,6 @@ router.get(
 
 // ====================== API DE CARRITOS / COMPRA ======================
 
-// POST /api/auth/carts/:cid/product/:pid (Agregar producto al carrito)
 router.post('/carts/:cid/product/:pid', authorize(['user']), async (req, res) => {
     try {
         const { cid, pid } = req.params;
@@ -109,7 +98,6 @@ router.post('/carts/:cid/product/:pid', authorize(['user']), async (req, res) =>
     }
 });
 
-// POST /api/auth/carts/:cid/purchase (Compra/Checkout)
 router.post('/carts/:cid/purchase', authorize(['user']), async (req, res) => {
     if (!req.user || !req.user.email) return res.status(401).json({ message: 'Usuario no autenticado o token inválido' });
 
@@ -154,7 +142,6 @@ router.delete('/products/:pid', authorize(['admin']), async (req, res) => {
 
 // ====================== API RESET PASSWORD ======================
 
-// POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
     try {
         await AuthService.sendResetPasswordEmail(req.body.email);
@@ -164,7 +151,6 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// POST /api/auth/reset-password
 router.post('/reset-password', async (req, res) => {
     try {
         await AuthService.resetPassword(req.body.token, req.body.newPassword);

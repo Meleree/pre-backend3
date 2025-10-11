@@ -1,4 +1,3 @@
-// src/routes/products.router.js
 import { Router } from "express";
 import multer from "multer";
 import { authMiddleware, authorizeRole } from "../middlewares/auth.middleware.js";

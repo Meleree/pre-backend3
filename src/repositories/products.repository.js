@@ -1,32 +1,28 @@
-// src/repositories/products.repository.js (CORREGIDO)
-import { productsDAO } from '../dao/index.js'; // 🚨 Importar el DAO directamente
+import { productsDAO } from '../dao/index.js'; 
 
 class ProductRepository {
-  constructor() {
-      // Usar el DAO importado
-      this.dao = productsDAO; 
-  }
+    constructor() {
+        this.dao = productsDAO; 
+    }
 
-  async getAll(filters = {}, options = {}) {
-      return await this.dao.getAll(filters, options);
-  }
-  // ... (otros métodos)
-  async getById(id) {
-      return await this.dao.getById(id);
-  }
+    async getAll(filters = {}, options = {}) {
+        return await this.dao.getAll(filters, options);
+    }
+    async getById(id) {
+        return await this.dao.getById(id);
+    }
 
-  async create(productData) {
-      return await this.dao.create(productData);
-  }
+    async create(productData) {
+        return await this.dao.create(productData);
+    }
 
-  async update(id, updateData) {
-      // 🚨 Método renombrado para claridad en la actualización de stock
-      return await this.dao.update(id, updateData);
-  }
+    async update(id, updateData) {
+        return await this.dao.update(id, updateData);
+    }
 
-  async delete(id) {
-      return await this.dao.delete(id);
-  }
+    async delete(id) {
+        return await this.dao.delete(id);
+    }
 }
 
 export default ProductRepository;

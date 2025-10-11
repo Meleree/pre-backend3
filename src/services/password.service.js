@@ -4,14 +4,14 @@ import { sendEmail } from "./email.service.js";
 import { hashPassword } from "../utils/helpers.js";
 
 const userRepo = new UserRepository();
-const tokenStore = new Map(); // simple memory store
+const tokenStore = new Map(); 
 
 export const requestPasswordReset = async (email) => {
   const user = await userRepo.getByEmail(email);
   if (!user) throw new Error("Usuario no encontrado");
 
   const token = crypto.randomBytes(20).toString("hex");
-  tokenStore.set(token, { userId: user._id, expires: Date.now() + 3600000 }); // 1 hora
+  tokenStore.set(token, { userId: user._id, expires: Date.now() + 3600000 }); 
 
   const resetLink = `${process.env.FRONTEND_URL}/password/reset/${token}`;
   await sendEmail({

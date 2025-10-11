@@ -27,9 +27,8 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- CONFIGURACIÓN DE CORS ---
 app.use(cors({
-  origin: "http://localhost:3000", // Cambia si tu frontend está en otro dominio/puerto
+  origin: "http://localhost:3000", 
   credentials: true
 }));
 

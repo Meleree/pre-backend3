@@ -19,7 +19,7 @@ const getProductById = async (req, res) => {
         return res.status(404).json({ status: "error", message: "Producto no encontrado" });
       }
   
-      const mainThumbnail = product.thumbnail || product.thumbnails[0]; // Fallback si no hay thumbnail principal
+      const mainThumbnail = product.thumbnail || product.thumbnails[0]; 
       res.status(200).json({ status: "success", payload: { ...product.toObject(), mainThumbnail } });
     } catch (error) {
       res.status(500).json({ status: "error", message: "Error al obtener el producto" });

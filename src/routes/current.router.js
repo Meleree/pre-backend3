@@ -1,4 +1,3 @@
-// src/routes/current.router.js
 import { Router } from 'express';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import AuthService from '../services/auth.service.js';

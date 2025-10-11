@@ -1,4 +1,4 @@
-# MelisaLettiere - Preentrega Backend 1
+# MelisaLettiere 
 
 Repositorio del proyecto backend de e-commerce desarrollado con Node.js, Express, MongoDB y Handlebars, aplicando buenas prácticas como DAO, DTO, servicios, mailing y autorización.
 
@@ -16,14 +16,11 @@ Repositorio del proyecto backend de e-commerce desarrollado con Node.js, Express
 
 ---
 
-## 🔹 Instalación
+PORT=8080
+MONGO_URI=mongodb://localhost:27017/tu_base_de_datos
 
-1. Clonar el repositorio:
-
-```bash
-git clone <link-del-repositorio>
-cd <nombre-del-proyecto>
-
-Adjunto el link de la variable: mongodb+srv://Melere:<db_password>@cluster0.4tgljut.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0 
-Usuario: Melere 
-Password: Coder2025
+EMAIL_USER=juanaantoniaarevalo@gmail.com
+EMAIL_PASS=wxjlbcufgaqccvaq
+FRONTEND_URL=http://localhost:8080
+JWT_SECRET=UNA_CLAVE_NUEVA_Y_SIMPLE_123 
+SESSION_SECRET=UNA_CLAVE_NUEVA_Y_SIMPLE_123 

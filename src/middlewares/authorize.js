@@ -1,12 +1,3 @@
-// src/middlewares/authorize.js
-
-/**
- * authorize(roles)
- * roles: string | array
- * Ejemplo:
- *   authorize('admin')           -> solo admin
- *   authorize(['admin','user'])  -> admin o user
- */
 export const authorize = (roles = []) => {
   if (typeof roles === 'string') roles = [roles];
 

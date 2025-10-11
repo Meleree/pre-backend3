@@ -1,4 +1,4 @@
-import { ticketsDAO } from '../dao/index.js'; // Importa correctamente el DAO
+import { ticketsDAO } from '../dao/index.js'; 
 
 export default class TicketRepository {
   constructor() {

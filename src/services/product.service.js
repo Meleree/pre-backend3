@@ -1,4 +1,3 @@
-// src/services/product.service.js
 import Product from "../dao/models/product.model.js";
 
 class ProductService {

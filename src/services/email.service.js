@@ -10,13 +10,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// 🧾 Envío de mail de compra
 export const sendPurchaseEmail = async (to, products, total, purchaserName, ticketCode) => {
   const productList = products
     .map(
       p => `
       <li>
-        ${p.title} - Precio unitario: $${p.price} - Cantidad: ${p.quantity} - Subtotal: $${p.price * p.quantity}
+        <strong>${p.title}</strong> - Precio unitario: $${p.price} - Cantidad: ${p.quantity} - Subtotal: $${p.price * p.quantity}
       </li>`
     )
     .join("");
@@ -43,7 +42,6 @@ export const sendPurchaseEmail = async (to, products, total, purchaserName, tick
   }
 };
 
-// ✉️ Envío de mail genérico
 export const sendEmail = async ({ to, subject, html }) => {
   const mailOptions = {
     from: `Melere <${process.env.EMAIL_USER}>`,

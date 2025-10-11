@@ -29,7 +29,6 @@ router.get("/:cid", async (req, res) => {
 });
 
 // ====================== AGREGAR PRODUCTO AL CARRITO ======================
-// Corregido: Defensa doble para evitar agregar sin usuario autenticado
 router.post("/:cid/product/:pid", authorize(["user"]), async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Tenés que iniciar sesión para agregar productos al carrito." });
@@ -76,6 +75,17 @@ router.delete("/:cid", async (req, res) => {
     res.json({ status: "success", payload: cart });
   } catch (err) {
     console.error("❌ Error al vaciar carrito:", err);
+    res.status(400).json({ status: "error", message: err.message });
+  }
+});
+
+// ====================== ELIMINAR CARRITO (ELIMINACIÓN REAL) ======================
+router.delete("/:cid/delete", async (req, res) => {
+  try {
+    await cartService.deleteCart(req.params.cid);
+    res.json({ status: "success", message: "Carrito eliminado" });
+  } catch (err) {
+    console.error("❌ Error al eliminar carrito:", err);
     res.status(400).json({ status: "error", message: err.message });
   }
 });

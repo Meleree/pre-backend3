@@ -1,57 +1,57 @@
 <h1>{{title}}</h1>
 
 {{#if welcomeMessage}}
-  <div class="alert alert-success text-center">{{welcomeMessage}}</div>
+    <div class="alert alert-success text-center">{{welcomeMessage}}</div>
 {{/if}}
 
 {{#if error}}
-  <div class="alert alert-danger text-center">Credenciales inválidas. Intentá nuevamente.</div>
+    <div class="alert alert-danger text-center">Credenciales inválidas. Intentá nuevamente.</div>
 {{/if}}
 
 <form id="loginForm" class="login-form">
-  <div>
-    <label>Email:</label>
-    <input type="email" id="email" required />
-  </div>
+    <div>
+        <label>Email:</label>
+        <input type="email" id="email" required />
+    </div>
 
-  <div>
-    <label>Contraseña:</label>
-    <input type="password" id="password" required />
-  </div>
+    <div>
+        <label>Contraseña:</label>
+        <input type="password" id="password" required />
+    </div>
 
-  <button type="submit" class="btn btn-primary">Ingresar</button>
+    <button type="submit" class="btn btn-primary">Ingresar</button>
 </form>
 
 <p>¿No tenés cuenta? <a href="/register">Registrate acá</a></p>
 
 <script>
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+    e.preventDefault();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-  try {
-    const response = await fetch("/api/auth/login", { 
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({ email, password }),
-      credentials: "include" // ← ¡CLAVE!
-    });
+    try {
+        const response = await fetch("/api/auth/login", { 
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({ email, password }),
+            credentials: "include"
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (response.ok && data.success) {
-      alert("Inicio de sesión exitoso 😄");
-      window.location.href = "/";
-    } else {
-      alert(data.message || "Credenciales inválidas.");
-    }
-  } catch (error) {
-    console.error("Error al iniciar sesión:", error);
-    alert("Hubo un problema con el inicio de sesión.");
-  }
+        if (response.ok && data.success) {
+            alert("Inicio de sesión exitoso 😄");
+            window.location.href = "/";
+        } else {
+            alert(data.message || "Credenciales inválidas.");
+        }
+    } catch (error) {
+        console.error("Error al iniciar sesión:", error);
+        alert("Hubo un problema con el inicio de sesión.");
+    
 });
 </script>

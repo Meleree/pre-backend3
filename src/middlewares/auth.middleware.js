@@ -5,7 +5,6 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Middleware para verificar la sesión activa (AUTENTICACIÓN)
 export const authMiddleware = (req, res, next) => {
   try {
     const token = req.signedCookies.currentUser; 
@@ -14,17 +13,15 @@ export const authMiddleware = (req, res, next) => {
       return res.status(401).json({ message: "Tenés que iniciar sesión para acceder a este recurso." });
     }
 
-    // VERIFICAR TOKEN
     const decoded = jwt.verify(token, JWT_SECRET); 
 
-    // CORRECCIÓN: Como el token ahora NO está anidado, la normalización es simple
     const normalizedUser = {
       _id: decoded._id || decoded.id, 
       email: decoded.email,
       role: decoded.role,
     };
 
-    req.user = normalizedUser; // Adjunta el payload normalizado
+    req.user = normalizedUser; 
 
     next();
   } catch (err) {
@@ -34,9 +31,7 @@ export const authMiddleware = (req, res, next) => {
   }
 };
 
-// Middleware para autorizar roles específicos (AUTORIZACIÓN)
 export const authorize = (roles) => (req, res, next) => {
-  // Si req.user no existe, ejecutamos authMiddleware primero.
   if (!req.user) {
     return authMiddleware(req, res, () => {
       if (!req.user) return; 
@@ -49,7 +44,6 @@ export const authorize = (roles) => (req, res, next) => {
     });
   }
 
-  // Si ya estamos autenticados (req.user existe), solo verificamos el rol.
   if (roles.includes(req.user.role)) {
     next();
   } else {

@@ -43,13 +43,10 @@
   </div>
 
   <script>
-    // Protección global para evitar doble notificación de sesión
     if (!window.__SESSION_ALERT_SHOWN__) window.__SESSION_ALERT_SHOWN__ = false;
 
     document.addEventListener("DOMContentLoaded", () => {
-      // Limpia handlers anteriores para evitar duplicados
       document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
-        // Elimina todos los listeners previos
         const clone = btn.cloneNode(true);
         btn.parentNode.replaceChild(clone, btn);
       });
@@ -65,7 +62,6 @@
           let showedAuthError = false;
 
           try {
-            // Si no hay cartId, intento crearlo
             if (!cartId) {
               const response = await fetch("/api/carts", { 
                 method: "POST", 
@@ -80,20 +76,18 @@
                   alert("Tenés que iniciar sesión para agregar productos al carrito.");
                 }
                 showedAuthError = true;
-                return; // Detiene el flujo, NUNCA hace el segundo fetch
+                return; 
               }
               cartId = data._id || (data.payload && data.payload._id);
               if (!cartId) {
                 alert(data.message || "No se pudo crear el carrito.");
-                return; // Detiene el flujo, NUNCA hace el segundo fetch
+                return; 
               }
               localStorage.setItem("cartId", cartId);
             }
 
-            // Si por algún motivo cartId sigue no definido, no sigas
             if (!cartId) return;
 
-            // Segundo fetch: agregar producto
             const addResponse = await fetch(`/api/carts/${cartId}/product/${productId}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
