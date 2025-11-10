@@ -1,12 +1,16 @@
 import express from "express";
-import UserDTO from "../dtos/user.dto.js"; 
-import { authMiddleware } from "../middlewares/auth.middleware.js";
+import User from "../dao/models/user.model.js";
 
 const router = express.Router();
 
-router.get("/current", authMiddleware, (req, res) => {
-  const userDTO = new UserDTO(req.user);
-  res.json(userDTO);
+// Endpoint para listar todos los usuarios en la base
+router.get("/", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
