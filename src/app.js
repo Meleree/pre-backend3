@@ -10,17 +10,17 @@ import passport from 'passport';
 import cors from "cors";
 import './config/passport.js';
 import passwordRouter from './routes/password.router.js';
-
 import sessionsRouter from './routes/sessions.router.js';
 import usersViewsRouter from './routes/views.router.js'; 
 import cartsRouter from './routes/carts.router.js';
 import productsRouter from './routes/products.router.js';
 import connectDB from './config/db.js';
-// IMPORTA EL NUEVO ROUTER DE MOCKS
 import mocksRouter from './routes/mocks.router.js';
-// IMPORTA LOS ROUTERS DE USERS Y PETS
 import usersRouter from './routes/users.router.js';
 import petsRouter from './routes/pets.router.js';
+import adoptionRouter from './routes/adoption.router.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
 
 dotenv.config();
 
@@ -58,10 +58,10 @@ app.engine(
 app.set('view engine', 'handlebars');
 app.set('views', path.resolve(__dirname, 'views'));
 
-// INTEGRA EL NUEVO ROUTER DE MOCKS, USERS Y PETS
 app.use('/api/mocks', mocksRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/pets', petsRouter);
+app.use('/api/adoption', adoptionRouter);
 
 app.use('/api/auth', sessionsRouter);
 app.use('/api/products', productsRouter);
@@ -69,6 +69,8 @@ app.use('/api/carts', cartsRouter);
 
 app.use('/password', passwordRouter);
 app.use('/', usersViewsRouter);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const server = http.createServer(app);
 const io = new SocketServer(server);
@@ -86,3 +88,5 @@ connectDB().then(() => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`)
   );
 });
+
+export default app;

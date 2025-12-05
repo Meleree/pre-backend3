@@ -1,126 +1,138 @@
-# Final Backend Meleree
+# Final Backend Melere — Coderhouse
 
-Este proyecto es la entrega N°1 del curso Backend Coderhouse. Está basado en Node.js, Express y MongoDB, siguiendo arquitectura modular y buenas prácticas, e incluye funcionalidades de mocking para pruebas automáticas de usuarios y mascotas.
-
----
-
-## 🚀 **¿Qué incluye?**
-
-- **Router `/api/mocks`:** Mocking de usuarios y mascotas.
-- **Endpoints GET y POST para pruebas en la base de datos.**
-- **Modelos User y Pet con persistencia en MongoDB**
-- **Endpoints para consultar usuarios y mascotas.**
-- **Autenticación básica, gestión de productos, carritos y sesiones.**
-- **Integración con websockets para eventos.**
-- **Motor de plantillas handlebars.**
+Proyecto backend de adopción de mascotas, desarrollado para la entrega final del curso Coderhouse Backend.  
+Incluye:
+- Base de datos MongoDB
+- API REST documentada con Swagger/OpenAPI
+- Tests automáticos funcionales
+- Despliegue y ejecución vía Docker y Docker Hub
 
 ---
 
-## 🔑 **Variables de entorno (.env)**
+## 🐶 Descripción
 
-Asegúrate de crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+API RESTful para gestión de usuarios, adopciones y mascotas.  
+Dockerizado y listo para correr en cualquier máquina sin dependencias extra.
 
-```
-PORT=8080
-MONGO_URI=mongodb://localhost:27017/tu_base_de_datos
-EMAIL_USER=juanaantoniaarevalo@gmail.com
-EMAIL_PASS=wxjlbcufgaqccvaq
-FRONTEND_URL=http://localhost:8080
-JWT_SECRET=UNA_CLAVE_NUEVA_Y_SIMPLE_123
-SESSION_SECRET=UNA_CLAVE_NUEVA_Y_SIMPLE_123
+---
+
+## 🚀 Quick Start — Imagen Docker **100% lista para probar**
+
+**No necesitas crear usuarios de Mongo, claves, ni configurar variables manualmente para pruebas. ¡Listo para usar!**
+
+### Ejecuta el backend directamente con Docker Hub:
+
+```bash
+docker pull meleree/final-backend-melere:latest
+docker run -p 8080:8080 meleree/final-backend-melere:latest
 ```
 
-**Explicación:**
-- `PORT`: Puerto en el que corre la app.
-- `MONGO_URI`: URI de tu base local de MongoDB (ajusta el nombre de base si quieres).
-- `EMAIL_USER` y `EMAIL_PASS`: Credenciales SMTP para funcionalidades de email.
-- `FRONTEND_URL`: URL de tu frontend local/test.
-- `JWT_SECRET` y `SESSION_SECRET`: Claves secretas simples para JWT y sesiones.
+- Acceso: [http://localhost:8080](http://localhost:8080)
+- Documentación Swagger: [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
 
 ---
 
-## 🛠️ **Instalación rápida**
+### 🐳 Variables y configuración
 
-1. Instala las dependencias:
-   ```bash
-   npm install
-   ```
-2. Configura tu `.env` como se muestra arriba.
-3. Levanta el servidor:
-   ```bash
-   npm run dev
-   ```
-   o
-   ```bash
-   nodemon src/app.js
-   ```
+Para **uso en Docker** (con la imagen pública):
+- **NO necesitas crear ningún usuario, clave ni variable de entorno adicional**.  
+- La aplicación se conecta automáticamente a una base MongoDB local (o puedes enlazarla vía docker-compose).
+- Por defecto, si no se pasa ninguna variable, usa `mongodb://mongodb:27017/Melere` (configuración interna del Docker Compose).
+
+Para **desarrollo local o custom**:
+- Crea un archivo `.env` en la raíz del proyecto usando como guía el archivo `.env.example`.
+- Variables principales:
+  - `MONGODB_URI`: URI de tu conexión MongoDB (ejemplo para docker-compose: `mongodb://mongodb:27017/Melere`)
+  - `SESSION_SECRET` y `JWT_SECRET`: Para sesiones y autenticación (pon cualquier valor seguro si solo es para desarrollo).
+  - `PORT`: Puerto a exponer (por defecto, 8080).
 
 ---
 
-## 🧪 **Endpoints de Mocking**
+## 📋 Documentación Swagger
 
-### **Usuarios Mock (no persistente):**
+Disponible automáticamente mientras el backend está corriendo:
+
+- [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
+
+Incluye esquemas, endpoints principales y ejemplos de uso.
+
+---
+
+## 🧪 Tests Funcionales
+
+Automatizados con Jest y Supertest para todos los endpoints de adopción:
+
+- Crear adopción (POST /api/adoption)
+- Listar adopciones (GET /api/adoption)
+- Obtener por ID (GET /api/adoption/:id)
+- Actualizar (PUT /api/adoption/:id)
+- Borrar (DELETE /api/adoption/:id)
+- Casos 404 y errores
+
+**Correr los tests en el contenedor**:
+
+```bash
+docker-compose run --rm app npm test
 ```
-GET /api/mocks/mockingusers?num=N
-```
-Devuelve N usuarios mock (por default, 50). Password encriptada, rol alterno, pets vacíos.
-
-### **Mascotas Mock (no persistente):**
-```
-GET /api/mocks/mockingpets?num=N
-```
-Devuelve N mascotas falsas para pruebas.
-
-### **Insertar usuarios y mascotas en DB:**
-```
-POST /api/mocks/generateData
-Content-Type: application/json
-Body:
-{
-   "users": 10,
-   "pets": 10
-}
-```
-Inserta la cantidad indicada y responde con los objetos creados.
 
 ---
 
-## 📚 **Consultar Base de Datos**
+## ⚙️ Manual de uso y desarrollo local
 
-- **Usuarios:**  
-  ```
-  GET /api/users
-  ```
-- **Mascotas:**  
-  ```
-  GET /api/pets
-  ```
-
----
-
-## ✅ **Chequeo de Entrega N°1**
-
-- Router mocks y endpoints funcionales e integrados.
-- Mocking modular de usuarios y mascotas.
-- Password encriptada, roles, array vacío pets.
-- Generación e inserción masiva con comprobación vía endpoints de consulta.
+1. Clona el repositorio:
+    ```bash
+    git clone https://github.com/meleree/final-backend-melere.git
+    cd final-backend-melere
+    ```
+2. Instala dependencias:
+    ```bash
+    npm install
+    ```
+3. Crea un archivo `.env` según tu configuración (ver `.env.example`).
+4. Levanta MongoDB y backend con Docker Compose:
+    ```bash
+    docker-compose up --build
+    ```
+5. Accede a la API en [http://localhost:8080](http://localhost:8080)
 
 ---
 
-## 🗂️ **Estructura de carpetas**
+## 🐳 Composición Docker
 
-- `src/routes`: Routers Express (mocks, users, pets y otros)
-- `src/dao/models`: Modelos de Mongoose (User, Pet)
-- `src/utils`: Utilidades de mocking
-- `src/views`: Plantillas handlebars
-- `src/middlewares`, `src/services`, etc: Lógica adicional
+- `Dockerfile` para backend Node.js + Express
+- `docker-compose.yml` para backend y MongoDB listo para pruebas
+- Imagen publicada:
+  - Docker Hub: [https://hub.docker.com/r/meleree/final-backend-melere](https://hub.docker.com/r/meleree/final-backend-melere)
+  - Tag: `latest`
+  - Digest: `sha256:1cc39fb2e…`
 
----
-
-## 🤝 **¿Dudas o mejoras?**
-
-¡Puedes escribirme a [melisa.gis@gmail.com](mailto:melisa.gis@gmail.com) si necesitas ayuda para levantar el proyecto o probar su funcionamiento!
+- **Sin requisitos de usuarios, claves o variables externos para las pruebas básicas**
 
 ---
 
-**¡Gracias por revisar la entrega!**
+## 📝 Checklist de entrega Coderhouse
+
+- [x] Dockerfile funcional y probado
+- [x] Imagen pública en Docker Hub
+- [x] README claro, link Docker Hub, sin datos sensibles
+- [x] Tests funcionales (Jest/Supertest) en endpoints adopción
+- [x] Documentación Swagger `/api-docs`
+- [x] Dockerizable y ejecutable en cualquier máquina
+
+---
+
+## 💌 Autor
+
+Meleree  
+[https://github.com/meleree](https://github.com/meleree)
+
+---
+
+## 🆘 Contacto y dudas
+
+Para cualquier inconveniente, error, o ayuda adicional, contactarme por GitHub Issues o por mail.
+
+---
+
+**¡Listo para probar y entregar!  
+Ningún usuario, clave o secreto externo requerido para correr tu backend en modo pruebas.**

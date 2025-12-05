@@ -2,10 +2,14 @@ import mongoose from 'mongoose';
 
 export default async function connectDB() {
   try {
-    console.log("📌 Conectando a MongoDB con URI:", process.env.MONGO_URI);
+    // Usar MONGODB_URI como variable estándar, y si no existe usar la local
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || "mongodb://localhost:27017/Melere";
+    console.log("📌 Conectando a MongoDB con URI:", mongoUri);
 
-    await mongoose.connect(process.env.MONGO_URI, {
+    await mongoose.connect(mongoUri, {
       dbName: 'Melere',
+      useNewUrlParser: true,
+      useUnifiedTopology: true
     });
 
     console.log('✅ MongoDB conectado');
